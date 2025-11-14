@@ -1,6 +1,8 @@
 from flask import Flask, Response, request
 import uuid
 
+import face_recognition
+
 IMAGES_ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
 
 flask_server = Flask(__name__)
@@ -51,14 +53,30 @@ def facial_auth():
 	image_document_blob = image_document.read()
 	image_selfie_blob = image_selfie.read()
 
-	uploaded_files[image_document_key] = {
+	image_document_object = {
 		"filename": image_document.filename,
+		"fileext": get_file_extension(image_document.filename),
 		"blob": image_document_blob
 	}
-	uploaded_files[image_selfie_key] = {
+	image_selfie_object = {
 		"filename": image_selfie.filename,
+		"fileext": get_file_extension(image_selfie.filename),
 		"blob": image_selfie_blob
 	}
+
+	uploaded_files[image_document_key] = image_document_object
+	uploaded_files[image_selfie_key] = image_selfie_object
+
+	aws_client = face_recognition.create_aws_client()
+	cropped_face = face_recognition.compare_two_faces(document_object=image_document_object, selfie_object=image_selfie_object, aws_client=aws_client)
+	
+	uploaded_files[image_document_key + "_cropped"] = {
+		"filename": str(image_document.filename) + "_cropped",
+		"fileext": get_file_extension(image_document.filename),
+		"blob": cropped_face
+	}
+
+	print("Cropped document: " + image_document_key + "_cropped")
 
 	return {"ok": True}
 
@@ -68,5 +86,5 @@ def facial_auth():
 def see_uploads():
 	image_key = request.args.get('key', '')
 	image = uploaded_files[image_key]["blob"]
-	mimetype = get_file_extension(uploaded_files[image_key]["filename"])
+	mimetype = uploaded_files[image_key]["fileext"]
 	return Response(response=image, mimetype=mimetype)
