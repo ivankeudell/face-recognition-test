@@ -6,6 +6,24 @@
 	<title>Document</title>
 </head>
 <body>
-	This is a static file!
+	<h1>Image based authentication thingy</h1>
+	<hr>
+	<form action="/api/facial_auth" method="post" enctype="multipart/form-data">
+		<div>
+			<div>Cédula de identidad</div>
+			<div>
+				<input type="file" name="image-document">
+			</div>
+		</div>
+		<div>
+			<div>Selfie</div>
+			<div>
+				<input type="file" name="image-selfie">
+			</div>
+		</div>
+		<div>
+			<input type="submit">
+		</div>
+	</form>
 </body>
 </html>
