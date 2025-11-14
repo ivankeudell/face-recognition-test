@@ -9,19 +9,19 @@
 	<h1>Image based authentication thingy</h1>
 	<hr>
 	<form action="/api/facial_auth" method="post" enctype="multipart/form-data">
-		<div>
+		<div style="padding: 1rem;">
 			<div>Cédula de identidad</div>
 			<div>
-				<input type="file" name="image-document">
+				<input type="file" name="image-document" accept="image/png,image/jpg,image/jpeg,image/webp">
 			</div>
 		</div>
-		<div>
+		<div style="padding: 1rem;">
 			<div>Selfie</div>
 			<div>
-				<input type="file" name="image-selfie">
+				<input type="file" name="image-selfie" capture="user" accept="image/png,image/jpg,image/jpeg,image/webp">
 			</div>
 		</div>
-		<div>
+		<div style="padding: 1rem;">
 			<input type="submit">
 		</div>
 	</form>
