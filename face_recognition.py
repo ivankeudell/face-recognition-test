@@ -21,9 +21,9 @@ def create_aws_client():
 	return aws_client
 
 
-def detect_and_crop_face(imageBlob, imageFileExtension, aws_client):
+def detect_and_crop_face(image_blob, image_file_extension, aws_client):
 	print("Asking AWS to detect a face...")
-	response = aws_client.detect_faces(Image={'Bytes': imageBlob}, Attributes=['DEFAULT'])
+	response = aws_client.detect_faces(Image={'Bytes': image_blob}, Attributes=['DEFAULT'])
 	print("AWS finished!")
 
 	if len(response["FaceDetails"]) == 0:
@@ -32,7 +32,7 @@ def detect_and_crop_face(imageBlob, imageFileExtension, aws_client):
 
 	bounding_box = response["FaceDetails"][0]["BoundingBox"]
 
-	image = Image.open(io.BytesIO(imageBlob))
+	image = Image.open(io.BytesIO(image_blob))
 	w, h = image.size
 	print("image size: " + str(w) + "x" + str(h))
 
@@ -44,7 +44,7 @@ def detect_and_crop_face(imageBlob, imageFileExtension, aws_client):
 	cropped = image.crop((left, top, left+width, top+height))
 
 	with io.BytesIO() as f:
-		cropped.save(f, imageFileExtension)
+		cropped.save(f, image_file_extension)
 		return f.getvalue()
 
 	#croppedBlob = io.BytesIO()
@@ -53,6 +53,27 @@ def detect_and_crop_face(imageBlob, imageFileExtension, aws_client):
 	#return croppedBlob.getValue()
 	#return None
 
+def are_faces_the_same(document_blob, selfie_blob, aws_client):
+	print("Asking AWS to compare the faces...")
+	response = aws_client.compare_faces(
+		SourceImage={'Bytes': document_blob},
+		TargetImage={'Bytes': selfie_blob},
+		SimilarityThreshold=70
+	)
+	print("Are these faces the same? " + str(response))
+	return response
+
 def compare_two_faces(document_object, selfie_object, aws_client):
-	cropped_face = detect_and_crop_face(document_object["blob"], document_object["fileext"], aws_client=aws_client)
-	return cropped_face
+	cropped_document_face_blob = detect_and_crop_face(document_object["blob"], document_object["fileext"], aws_client)
+	if cropped_document_face_blob is None:
+		print("Failed to get cropped document face :C")
+		return None
+
+	cropped_selfie_face_blob = detect_and_crop_face(selfie_object["blob"], selfie_object["fileext"], aws_client)
+	if cropped_selfie_face_blob is None:
+		print("Failed to get cropped selfie face :C")
+		return None
+
+	are_the_same = are_faces_the_same(cropped_document_face_blob, cropped_selfie_face_blob, aws_client)
+	return are_the_same
+	#return cropped_face

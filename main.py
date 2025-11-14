@@ -68,8 +68,9 @@ def facial_auth():
 	uploaded_files[image_selfie_key] = image_selfie_object
 
 	aws_client = face_recognition.create_aws_client()
-	cropped_face = face_recognition.compare_two_faces(document_object=image_document_object, selfie_object=image_selfie_object, aws_client=aws_client)
+	faces_are_the_same = face_recognition.compare_two_faces(document_object=image_document_object, selfie_object=image_selfie_object, aws_client=aws_client)
 	
+	'''
 	uploaded_files[image_document_key + "_cropped"] = {
 		"filename": str(image_document.filename) + "_cropped",
 		"fileext": get_file_extension(image_document.filename),
@@ -77,8 +78,9 @@ def facial_auth():
 	}
 
 	print("Cropped document: " + image_document_key + "_cropped")
+	'''
 
-	return {"ok": True}
+	return {"ok": faces_are_the_same}
 
 
 
