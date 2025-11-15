@@ -3,6 +3,7 @@ from PIL import Image
 import io
 import json
 import numbers
+import traceback
 
 SIMILARITY_THRESHOLD = 70
 
@@ -26,8 +27,24 @@ def create_aws_client():
 
 def detect_and_crop_face(image_blob, image_file_extension, aws_client):
 	try:
+		if image_file_extension == 'jpg':
+			image_file_extension = 'jpeg' # Pillow is stupid
+
+		# Resize image
+		full_image = Image.open(io.BytesIO(image_blob))
+		full_width, full_height = full_image.size
+		print("full image size: " + str(full_width) + "x" + str(full_height))
+
+		resized_image = full_image.resize((int(full_width/1.5), int(full_height/1.5)), Image.Resampling.LANCZOS)
+
+		resized_blob = None
+		with io.BytesIO() as f:
+			resized_image.save(f, format=image_file_extension, optimize=True, quality=90)
+			resized_blob = f.getvalue()
+
+		# Send image to aws to get face bounding box
 		print("Asking AWS to detect a face...")
-		response = aws_client.detect_faces(Image={'Bytes': image_blob}, Attributes=['DEFAULT'])
+		response = aws_client.detect_faces(Image={'Bytes': resized_blob}, Attributes=['DEFAULT'])
 		print("AWS finished!")
 
 		if len(response["FaceDetails"]) == 0:
@@ -36,22 +53,22 @@ def detect_and_crop_face(image_blob, image_file_extension, aws_client):
 
 		bounding_box = response["FaceDetails"][0]["BoundingBox"]
 
-		image = Image.open(io.BytesIO(image_blob))
-		w, h = image.size
-		print("image size: " + str(w) + "x" + str(h))
-
+		# Crop the face and return it
+		w, h = resized_image.size
+		print("resized image: " + str(w) + "x" + str(h))
 		left = int(bounding_box['Left'] * w)
 		top = int(bounding_box['Top'] * h)
 		width = int(bounding_box['Width'] * w)
 		height = int(bounding_box['Height'] * h)
 
-		cropped = image.crop((left, top, left+width, top+height))
+		cropped = resized_image.crop((left, top, left+width, top+height))
 
 		with io.BytesIO() as f:
-			cropped.save(f, image_file_extension)
+			cropped.save(f, format=image_file_extension)
 			return f.getvalue()
 	except Exception as e:
-		print(e)
+		print("Error: (" + str(type(e).__name__) + ") " + str(e))
+		traceback.print_exc()
 		return None
 
 

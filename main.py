@@ -24,6 +24,8 @@ def root():
 
 @flask_server.route('/api/facial_auth', methods=['POST'])
 def facial_auth():
+	print("Getting something on /api/facial_auth")
+
 	if request.method != 'POST':
 		return {"ok": False, "error": "Only POST method supported"}
 	
@@ -93,3 +95,6 @@ def see_uploads():
 	image = uploaded_files[image_key]["blob"]
 	mimetype = uploaded_files[image_key]["fileext"]
 	return Response(response=image, mimetype=mimetype)
+
+if __name__ == "__main__":
+	flask_server.run("0.0.0.0", "5000")
