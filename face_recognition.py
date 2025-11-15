@@ -2,7 +2,6 @@ import boto3
 from PIL import Image
 import io
 import json
-import numbers
 import traceback
 
 SIMILARITY_THRESHOLD = 70
@@ -35,7 +34,19 @@ def detect_and_crop_face(image_blob, image_file_extension, aws_client):
 		full_width, full_height = full_image.size
 		print("full image size: " + str(full_width) + "x" + str(full_height))
 
-		resized_image = full_image.resize((int(full_width/1.5), int(full_height/1.5)), Image.Resampling.LANCZOS)
+		target_width = full_width
+		target_height = full_height
+		if full_width > 2000 or full_height > 2000:
+			target_width = int(full_width / 2)
+			target_height = int(full_height / 2)
+		elif full_width > 1000 or full_height > 1000:
+			target_width = int(full_width / 1.5)
+			target_height = int(full_height / 1.5)
+
+		resized_image = full_image.resize((target_width, target_height), Image.Resampling.LANCZOS)
+
+		w, h = resized_image.size
+		print("resized image: " + str(w) + "x" + str(h))
 
 		resized_blob = None
 		with io.BytesIO() as f:
@@ -54,8 +65,6 @@ def detect_and_crop_face(image_blob, image_file_extension, aws_client):
 		bounding_box = response["FaceDetails"][0]["BoundingBox"]
 
 		# Crop the face and return it
-		w, h = resized_image.size
-		print("resized image: " + str(w) + "x" + str(h))
 		left = int(bounding_box['Left'] * w)
 		top = int(bounding_box['Top'] * h)
 		width = int(bounding_box['Width'] * w)

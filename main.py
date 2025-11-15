@@ -1,5 +1,5 @@
 from flask import Flask, Response, request
-import uuid
+#import uuid
 
 import face_recognition
 
@@ -27,12 +27,12 @@ def facial_auth():
 	print("Getting something on /api/facial_auth")
 
 	if request.method != 'POST':
-		return {"ok": False, "error": "Only POST method supported"}
+		return {"ok": False, "error": "Only POST method supported"}, 405
 	
 	# Check if the request has the file part
 	if 'image-document' not in request.files \
 	or 'image-selfie' not in request.files:
-		return {"ok": False, "error": "Files were not sent"}
+		return {"ok": False, "error": "Files were not sent"}, 415
 
 	print("Loading images...")
 	image_document = request.files['image-document']
@@ -41,17 +41,17 @@ def facial_auth():
 	# If no files are sent, the browser sends an empty file with an empty filename
 	if image_document.filename == '' \
 	or image_selfie.filename == '':
-		return {"ok": False, "error": "Images were not sent"}
+		return {"ok": False, "error": "Images were not sent"}, 415
 	
 	if not is_file_extension_allowed(image_document.filename) \
 	or not is_file_extension_allowed(image_selfie.filename):
-		return {"ok": False, "error": "File not allowed"}
+		return {"ok": False, "error": "File not allowed"}, 415
 
-	image_document_key = str(uuid.uuid4())
-	image_selfie_key = str(uuid.uuid4())
+	#image_document_key = str(uuid.uuid4())
+	#image_selfie_key = str(uuid.uuid4())
 
-	print("document key: " + image_document_key)
-	print("selfie key: " + image_selfie_key)
+	#print("document key: " + image_document_key)
+	#print("selfie key: " + image_selfie_key)
 
 	image_document_blob = image_document.read()
 	image_selfie_blob = image_selfie.read()
@@ -68,14 +68,14 @@ def facial_auth():
 	}
 	print("Images loaded!")
 
-	uploaded_files[image_document_key] = image_document_object
-	uploaded_files[image_selfie_key] = image_selfie_object
+	#uploaded_files[image_document_key] = image_document_object
+	#uploaded_files[image_selfie_key] = image_selfie_object
 
 	aws_client = face_recognition.create_aws_client()
 	faces_are_the_same = face_recognition.compare_two_faces(document_object=image_document_object, selfie_object=image_selfie_object, aws_client=aws_client)
 
 	if faces_are_the_same is None:
-		return {"ok": False, "error": "Failed to match faces"}
+		return {"ok": False, "error": "Failed to match faces"}, 400
 	
 	'''
 	uploaded_files[image_document_key + "_cropped"] = {
@@ -87,16 +87,17 @@ def facial_auth():
 	print("Cropped document: " + image_document_key + "_cropped")
 	'''
 
-	return {"ok": True, "faces_match": faces_are_the_same}
+	return {"ok": True, "faces_match": faces_are_the_same}, 200
 
 
-
+'''
 @flask_server.route('/api/seeUploads', methods=['GET'])
 def see_uploads():
 	image_key = request.args.get('key', '')
 	image = uploaded_files[image_key]["blob"]
 	mimetype = uploaded_files[image_key]["fileext"]
 	return Response(response=image, mimetype=mimetype)
+'''
 
 if __name__ == "__main__":
 	flask_server.run("0.0.0.0", "5000")
