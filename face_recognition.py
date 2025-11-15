@@ -2,13 +2,16 @@ import boto3
 from PIL import Image
 import io
 import json
+import numbers
+
+SIMILARITY_THRESHOLD = 70
 
 def create_aws_client():
 	json_data = None
 	with open("config.json") as json_file:
 		json_data = json.load(json_file)
 
-	print("Connecting to AWS...")
+	print("Creating AWS Client...")
 	
 	aws_client = boto3.client(
 		'rekognition',
@@ -47,21 +50,29 @@ def detect_and_crop_face(image_blob, image_file_extension, aws_client):
 		cropped.save(f, image_file_extension)
 		return f.getvalue()
 
-	#croppedBlob = io.BytesIO()
-	#cropped.save(croppedBlob, format=cropped.format)
-	#cropped.save(croppedBlob, format=cropped.format)
-	#return croppedBlob.getValue()
-	#return None
 
 def are_faces_the_same(document_blob, selfie_blob, aws_client):
 	print("Asking AWS to compare the faces...")
 	response = aws_client.compare_faces(
 		SourceImage={'Bytes': document_blob},
 		TargetImage={'Bytes': selfie_blob},
-		SimilarityThreshold=70
+		SimilarityThreshold=SIMILARITY_THRESHOLD
 	)
 	print("Are these faces the same? " + str(response))
-	return response
+
+	if response["FaceMatches"] is None \
+	or response["FaceMatches"][0] is None \
+	or response["FaceMatches"][0]["Similarity"] is None:
+		print("Failed to get Similarity value")
+		return None
+	
+	similarity = response["FaceMatches"][0]["Similarity"]
+	if not isinstance(similarity, numbers.Number) or isinstance(similarity, bool):
+		print("Similarity value is not a number")
+		return None
+
+	print("Similarity: ", str(similarity) + "/" + str(SIMILARITY_THRESHOLD))
+	return similarity >= SIMILARITY_THRESHOLD
 
 def compare_two_faces(document_object, selfie_object, aws_client):
 	cropped_document_face_blob = detect_and_crop_face(document_object["blob"], document_object["fileext"], aws_client)
@@ -76,4 +87,3 @@ def compare_two_faces(document_object, selfie_object, aws_client):
 
 	are_the_same = are_faces_the_same(cropped_document_face_blob, cropped_selfie_face_blob, aws_client)
 	return are_the_same
-	#return cropped_face
