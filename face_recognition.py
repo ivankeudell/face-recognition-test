@@ -79,21 +79,21 @@ def are_faces_the_same(document_blob, selfie_blob, aws_client):
 		TargetImage={'Bytes': selfie_blob},
 		SimilarityThreshold=SIMILARITY_THRESHOLD
 	)
-	print("Are these faces the same? " + str(response))
+	print("Are these faces the same? " + json.dumps(response))
 
-	if response["FaceMatches"] is None \
-	or response["FaceMatches"][0] is None \
-	or response["FaceMatches"][0]["Similarity"] is None:
-		print("Failed to get Similarity value")
-		return None
-	
-	similarity = response["FaceMatches"][0]["Similarity"]
-	if not isinstance(similarity, numbers.Number) or isinstance(similarity, bool):
-		print("Similarity value is not a number")
+	if response["FaceMatches"] is not None \
+	and response["UnmatchedFaces"] is not None:
+		if len(response["FaceMatches"]) > 0:
+			return True
+		elif len(response["UnmatchedFaces"]) > 0:
+			return False
+		else:
+			print("Neither FaceMatched nor UnmatchedFaces have content in them, weird")
+			return None
+	else:
+		print("FaceMatches or UnmatchedFaces is not present")
 		return None
 
-	print("Similarity: ", str(similarity) + "/" + str(SIMILARITY_THRESHOLD))
-	return similarity >= SIMILARITY_THRESHOLD
 
 def compare_two_faces(document_object, selfie_object, aws_client):
 	cropped_document_face_blob = detect_and_crop_face(document_object["blob"], document_object["fileext"], aws_client)

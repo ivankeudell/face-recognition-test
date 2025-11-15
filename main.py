@@ -34,6 +34,7 @@ def facial_auth():
 	or 'image-selfie' not in request.files:
 		return {"ok": False, "error": "Files were not sent"}
 
+	print("Loading images...")
 	image_document = request.files['image-document']
 	image_selfie = request.files['image-selfie']
 
@@ -65,6 +66,7 @@ def facial_auth():
 		"fileext": get_file_extension(image_selfie.filename),
 		"blob": image_selfie_blob
 	}
+	print("Images loaded!")
 
 	uploaded_files[image_document_key] = image_document_object
 	uploaded_files[image_selfie_key] = image_selfie_object
