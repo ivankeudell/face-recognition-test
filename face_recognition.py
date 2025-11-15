@@ -25,30 +25,34 @@ def create_aws_client():
 
 
 def detect_and_crop_face(image_blob, image_file_extension, aws_client):
-	print("Asking AWS to detect a face...")
-	response = aws_client.detect_faces(Image={'Bytes': image_blob}, Attributes=['DEFAULT'])
-	print("AWS finished!")
+	try:
+		print("Asking AWS to detect a face...")
+		response = aws_client.detect_faces(Image={'Bytes': image_blob}, Attributes=['DEFAULT'])
+		print("AWS finished!")
 
-	if len(response["FaceDetails"]) == 0:
-		print("There are no faces :c")
+		if len(response["FaceDetails"]) == 0:
+			print("There are no faces :c")
+			return None
+
+		bounding_box = response["FaceDetails"][0]["BoundingBox"]
+
+		image = Image.open(io.BytesIO(image_blob))
+		w, h = image.size
+		print("image size: " + str(w) + "x" + str(h))
+
+		left = int(bounding_box['Left'] * w)
+		top = int(bounding_box['Top'] * h)
+		width = int(bounding_box['Width'] * w)
+		height = int(bounding_box['Height'] * h)
+
+		cropped = image.crop((left, top, left+width, top+height))
+
+		with io.BytesIO() as f:
+			cropped.save(f, image_file_extension)
+			return f.getvalue()
+	except Exception as e:
+		print(e)
 		return None
-
-	bounding_box = response["FaceDetails"][0]["BoundingBox"]
-
-	image = Image.open(io.BytesIO(image_blob))
-	w, h = image.size
-	print("image size: " + str(w) + "x" + str(h))
-
-	left = int(bounding_box['Left'] * w)
-	top = int(bounding_box['Top'] * h)
-	width = int(bounding_box['Width'] * w)
-	height = int(bounding_box['Height'] * h)
-
-	cropped = image.crop((left, top, left+width, top+height))
-
-	with io.BytesIO() as f:
-		cropped.save(f, image_file_extension)
-		return f.getvalue()
 
 
 def are_faces_the_same(document_blob, selfie_blob, aws_client):

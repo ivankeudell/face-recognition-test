@@ -3,7 +3,7 @@ import uuid
 
 import face_recognition
 
-IMAGES_ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
+IMAGES_ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 flask_server = Flask(__name__)
 
@@ -69,6 +69,9 @@ def facial_auth():
 
 	aws_client = face_recognition.create_aws_client()
 	faces_are_the_same = face_recognition.compare_two_faces(document_object=image_document_object, selfie_object=image_selfie_object, aws_client=aws_client)
+
+	if faces_are_the_same is None:
+		return {"ok": False, "error": "Failed to match faces"}
 	
 	'''
 	uploaded_files[image_document_key + "_cropped"] = {
