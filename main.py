@@ -1,7 +1,12 @@
+print("Starting...")
+
 from flask import Flask, Response, request
 #import uuid
 
-import face_recognition
+print("Importing face recognition module...")
+#import aws_face_recognition as face_recognition
+import deepface_face_recognition as face_recognition
+print("Face recognition imported!")
 
 IMAGES_ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
@@ -14,6 +19,7 @@ def get_file_extension(filename):
 
 def is_file_extension_allowed(filename):
 	return '.' in filename and get_file_extension(filename) in IMAGES_ALLOWED_EXTENSIONS
+
 
 
 @flask_server.route('/')
@@ -71,8 +77,8 @@ def facial_auth():
 	#uploaded_files[image_document_key] = image_document_object
 	#uploaded_files[image_selfie_key] = image_selfie_object
 
-	aws_client = face_recognition.create_aws_client()
-	faces_are_the_same = face_recognition.compare_two_faces(document_object=image_document_object, selfie_object=image_selfie_object, aws_client=aws_client)
+	#aws_client = face_recognition.create_aws_client()
+	faces_are_the_same = face_recognition.compare_two_faces(document_object=image_document_object, selfie_object=image_selfie_object)#, aws_client=aws_client)
 
 	if faces_are_the_same is None:
 		return {"ok": False, "error": "Failed to match faces"}, 400
@@ -100,4 +106,5 @@ def see_uploads():
 '''
 
 if __name__ == "__main__":
-	flask_server.run("0.0.0.0", "5000")
+	print("Starting server...")
+	flask_server.run(debug=False, host="0.0.0.0", port="5000")
