@@ -4,8 +4,8 @@ from flask import Flask, Response, request
 #import uuid
 
 print("Importing face recognition module...")
-#import aws_face_recognition as face_recognition
-import deepface_face_recognition as face_recognition
+import aws_face_recognition as face_recognition
+#import deepface_face_recognition as face_recognition
 print("Face recognition imported!")
 
 IMAGES_ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
@@ -107,4 +107,4 @@ def see_uploads():
 
 if __name__ == "__main__":
 	print("Starting server...")
-	flask_server.run(debug=False, host="0.0.0.0", port="5000")
+	flask_server.run(debug=False, host="0.0.0.0", port="5000", ssl_context="adhoc")

@@ -18,7 +18,7 @@ def resize_image(image_object):
 		full_width, full_height = full_image.size
 		print("full image size: " + str(full_width) + "x" + str(full_height))
 
-		return full_image.convert("RGB")
+		#return full_image.convert("RGB")
 
 		target_width = full_width
 		target_height = full_height
@@ -34,18 +34,12 @@ def resize_image(image_object):
 		w, h = resized_image.size
 		print("resized image: " + str(w) + "x" + str(h))
 
-		return resized_image
-		'''
-		resized_blob = None
-		with io.BytesIO() as f:
-			resized_image.save(f, format=image_file_extension, optimize=True, quality=90)
-			resized_blob = f.getvalue()
-			return resized_blob
-		'''
+		return resized_image.convert("RGB")
 	except Exception as e:
 		print("Error: (" + str(type(e).__name__) + ") " + str(e))
 		traceback.print_exc()
 		return None
+
 
 def compare_two_faces(document_object, selfie_object):
 	try:
@@ -55,10 +49,8 @@ def compare_two_faces(document_object, selfie_object):
 		document_nparray_image = cv2.cvtColor(np.array(document_pil_image), cv2.COLOR_RGB2BGR)
 		selfie_nparray_image = cv2.cvtColor(np.array(selfie_pil_image), cv2.COLOR_RGB2BGR)
 
-		#print(json.dumps({"document": document_nparray_image, "selfie": selfie_nparray_image}))
-
 		print("Pidiendo a DeepFace que compare las caras...")
-		results = DeepFace.verify(document_nparray_image, selfie_nparray_image)
+		results = DeepFace.verify(img1_path=document_nparray_image, img2_path=selfie_nparray_image, model_name="Facenet512", detector_backend="retinaface")
 		print(results)
 		return results["verified"]
 	except Exception as e:
