@@ -1,29 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Document</title>
+	<title>Image based authentication thingy</title>
+	<link rel="stylesheet" href="style.css">
+	<script defer src="main.js"></script>
 </head>
 <body>
-	<h1>Image based authentication thingy</h1>
-	<hr>
-	<form action="/api/facial_auth" method="post" enctype="multipart/form-data">
-		<div style="padding: 1rem;">
-			<div>Cédula de identidad</div>
-			<div>
-				<input type="file" name="image-document" capture="landscape" accept="image/png,image/jpg,image/jpeg">
-			</div>
+	<section id="document-section">
+		<h1>Image based authentication thingy</h1>
+		<hr>
+		<div>
+			Foto del documento:
+			<button id="document-btn">Abrir cámara</button>
 		</div>
-		<div style="padding: 1rem;">
-			<div>Selfie</div>
-			<div>
-				<input type="file" name="image-selfie" capture="user" accept="image/png,image/jpg,image/jpeg">
-			</div>
-		</div>
-		<div style="padding: 1rem;">
-			<input type="submit">
-		</div>
-	</form>
+	</section>
+	<div id="document-canvas-container">
+		<video id="document-video" autoplay playsinline hidden></video>
+		<canvas id="document-canvas"></canvas>
+		<button id="document-shutter">Capturar</button>
+	</div>
+	<div>
+		<img id="document-result">
+	</div>
 </body>
 </html>
