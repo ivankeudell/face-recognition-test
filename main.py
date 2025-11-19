@@ -77,8 +77,8 @@ def facial_auth():
 	#uploaded_files[image_document_key] = image_document_object
 	#uploaded_files[image_selfie_key] = image_selfie_object
 
-	#aws_client = face_recognition.create_aws_client()
-	faces_are_the_same = face_recognition.compare_two_faces(document_object=image_document_object, selfie_object=image_selfie_object)#, aws_client=aws_client)
+	aws_client = face_recognition.create_aws_client()
+	faces_are_the_same = face_recognition.compare_two_faces(document_object=image_document_object, selfie_object=image_selfie_object, aws_client=aws_client)
 
 	if faces_are_the_same is None:
 		return {"ok": False, "error": "Failed to match faces"}, 400
