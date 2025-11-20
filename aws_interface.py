@@ -6,25 +6,48 @@ import traceback
 
 SIMILARITY_THRESHOLD = 70
 
-def create_aws_client():
-	json_data = None
-	with open("config.json") as json_file:
-		json_data = json.load(json_file)
 
-	print("Creating AWS Client...")
+
+def get_config():
+	with open("config.json") as json_file:
+		return json.load(json_file)
+
+
+def create_rekognition_client():
+	config = get_config()
+
+	print("Creating AWS Rekognition Client...")
 	
-	aws_client = boto3.client(
+	rekognition_client = boto3.client(
 		'rekognition',
-		aws_access_key_id=json_data["access_key"],
-		aws_secret_access_key=json_data["secret_access_key"],
+		aws_access_key_id=config["access_key"],
+		aws_secret_access_key=config["secret_access_key"],
 		region_name="us-east-1"
 	)
 
-	print("AWS Client created!")
-	return aws_client
+	print("AWS Rekognition Client created!")
+	return rekognition_client
 
 
-def detect_and_crop_face(image_blob, image_file_extension, aws_client):
+
+def create_textract_client():
+	config = get_config()
+
+	print("Creating AWS Textract Client...")
+
+	textract_client = boto3.client(
+		'textract',
+		aws_access_key_id=config["access_key"],
+		aws_secret_access_key=config["secret_access_key"],
+		region_name="us-east-1"
+	)
+
+	print("AWS Textract Client created!")
+	return textract_client
+
+
+
+def resize_image(image_blob, image_file_extension):
 	try:
 		if image_file_extension == 'jpg':
 			image_file_extension = 'jpeg' # Pillow is stupid
@@ -53,6 +76,21 @@ def detect_and_crop_face(image_blob, image_file_extension, aws_client):
 			resized_image.save(f, format=image_file_extension, optimize=True, quality=90)
 			resized_blob = f.getvalue()
 
+		return {"width": w, "height": h, "blob": resized_blob}
+	except Exception as e:
+		print("Error: (" + str(type(e).__name__) + ") " + str(e))
+		traceback.print_exc()
+		return None
+
+
+
+def detect_and_crop_face(image_blob, image_file_extension, aws_client):
+	try:
+		if image_file_extension == 'jpg':
+			image_file_extension = 'jpeg' # Pillow is stupid
+
+		resized_obj = resize_image(image_blob, image_file_extension)
+		resized_blob = resized_obj["blob"]
 		# Send image to aws to get face bounding box
 		print("Asking AWS to detect a face...")
 		response = aws_client.detect_faces(Image={'Bytes': resized_blob}, Attributes=['DEFAULT'])
@@ -65,12 +103,14 @@ def detect_and_crop_face(image_blob, image_file_extension, aws_client):
 		bounding_box = response["FaceDetails"][0]["BoundingBox"]
 
 		# Crop the face and return it
+		w = resized_obj["width"]
+		h = resized_obj["height"]
 		left = int(bounding_box['Left'] * w)
 		top = int(bounding_box['Top'] * h)
 		width = int(bounding_box['Width'] * w)
 		height = int(bounding_box['Height'] * h)
 
-		cropped = resized_image.crop((left, top, left+width, top+height))
+		cropped = Image.open(io.BytesIO(resized_blob)).crop((left, top, left+width, top+height))
 
 		with io.BytesIO() as f:
 			cropped.save(f, format=image_file_extension)
@@ -79,6 +119,7 @@ def detect_and_crop_face(image_blob, image_file_extension, aws_client):
 		print("Error: (" + str(type(e).__name__) + ") " + str(e))
 		traceback.print_exc()
 		return None
+
 
 
 def are_faces_the_same(document_blob, selfie_blob, aws_client):
@@ -104,16 +145,34 @@ def are_faces_the_same(document_blob, selfie_blob, aws_client):
 		return None
 
 
-def compare_two_faces(document_object, selfie_object, aws_client):
-	cropped_document_face_blob = detect_and_crop_face(document_object["blob"], document_object["fileext"], aws_client)
+
+def compare_two_faces(document_object, selfie_object):
+	rekognition_client = create_rekognition_client()
+
+	cropped_document_face_blob = detect_and_crop_face(document_object["blob"], document_object["fileext"], rekognition_client)
 	if cropped_document_face_blob is None:
 		print("Failed to get cropped document face :C")
 		return None
 
-	cropped_selfie_face_blob = detect_and_crop_face(selfie_object["blob"], selfie_object["fileext"], aws_client)
+	cropped_selfie_face_blob = detect_and_crop_face(selfie_object["blob"], selfie_object["fileext"], rekognition_client)
 	if cropped_selfie_face_blob is None:
 		print("Failed to get cropped selfie face :C")
 		return None
 
-	are_the_same = are_faces_the_same(cropped_document_face_blob, cropped_selfie_face_blob, aws_client)
+	are_the_same = are_faces_the_same(cropped_document_face_blob, cropped_selfie_face_blob, rekognition_client)
 	return are_the_same
+
+
+
+def get_document_details(document_object):
+	textract_client = create_textract_client()
+
+	document_image_blob = resize_image(document_object["blob"], document_object["fileext"])["blob"]
+	
+	response = textract_client.analyze_document(
+		Document={"Bytes": document_image_blob},
+		FeatureTypes=["FORMS"]
+	)
+
+	print("The document contains:\n" + json.dumps(response))
+	return None

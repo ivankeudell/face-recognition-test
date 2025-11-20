@@ -186,7 +186,7 @@ async function sendImages()
 		}
 		console.log(responseJson);
 		document.getElementById('log-result').innerText = responseText;
-		alert(responseJson);
+		alert(responseText);
 	}
 	catch(error)
 	{
