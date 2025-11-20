@@ -8,21 +8,44 @@
 	<script defer src="main.js"></script>
 </head>
 <body>
+	<video id="video" autoplay playsinline hidden></video>
 	<section id="document-section">
 		<h1>Image based authentication thingy</h1>
 		<hr>
 		<div>
-			Foto del documento:
-			<button id="document-btn">Abrir cámara</button>
+			Para empezar, tome una foto de su documento de identidad.
+			<div>
+				<button id="document-btn">Abrir cámara</button>
+			</div>
 		</div>
 	</section>
-	<div id="document-canvas-container">
-		<video id="document-video" autoplay playsinline hidden></video>
+	<section id="document-canvas-container" hidden>
+		
 		<canvas id="document-canvas"></canvas>
-		<button id="document-shutter">Capturar</button>
-	</div>
-	<div>
+		<div>
+			<button id="document-shutter">Capturar</button>
+		</div>
+	</section>
+	<section id="selfie-section" hidden>
+		<h1>Image based authentication thingy</h1>
+		<hr>
+		<div>
+			Ahora tome una foto de su rostro
+			<div>
+				<button id="selfie-btn">Abrir cámara</button>
+			</div>
+		</div>
+	</section>
+	<section id="selfie-canvas-container" hidden>
+		<video id="selfie-video" autoplay playsinline hidden></video>
+		<canvas id="selfie-canvas"></canvas>
+		<div>
+			<button id="selfie-shutter">Capturar</button>
+		</div>
+	</section>
+	<section id="results" hidden>
 		<img id="document-result">
-	</div>
+		<img id="selfie-result">
+	</section>
 </body>
 </html>
