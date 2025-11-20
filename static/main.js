@@ -132,6 +132,7 @@ document.getElementById('selfie-btn').addEventListener('click', async function()
 		document.getElementById('selfie-canvas-container').hidden = true;
 		document.getElementById('results').hidden = false;
 		stopCameras();
+		sendImages();
 	});
 	//resize();
 	drawFrame();
@@ -152,3 +153,43 @@ async function captureImage(video)
 	});
 }
 
+async function sendImages()
+{
+	if(documentImageBlob === undefined || selfieImageBlob === undefined)
+	{
+		console.error('Some blobs are undefined');
+		return;
+	}
+
+	try
+	{
+		let formData = new FormData();
+		formData.append("image-document", documentImageBlob, "document.jpg");
+		formData.append("image-selfie", selfieImageBlob, "selfie.jpg");
+	
+		let response = await fetch('/api/facial_auth',
+		{
+			method: 'POST',
+			body: formData
+		});
+	
+		let responseText = await response.text();
+		let responseJson;
+		try
+		{
+			responseJson = JSON.parse(responseText);
+		}
+		catch
+		{
+			console.error("Failed to parse json");
+			alert(responseText);
+		}
+		console.log(responseJson);
+		document.getElementById('log-result').innerText = responseText;
+		alert(responseJson);
+	}
+	catch(error)
+	{
+		alert(JSON.stringify(error));
+	}
+}

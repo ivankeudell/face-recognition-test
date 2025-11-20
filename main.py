@@ -33,11 +33,13 @@ def facial_auth():
 	print("Getting something on /api/facial_auth")
 
 	if request.method != 'POST':
+		print("Only POST method supported")
 		return {"ok": False, "error": "Only POST method supported"}, 405
 	
 	# Check if the request has the file part
 	if 'image-document' not in request.files \
 	or 'image-selfie' not in request.files:
+		print("Files were not sent")
 		return {"ok": False, "error": "Files were not sent"}, 415
 
 	print("Loading images...")
@@ -47,10 +49,12 @@ def facial_auth():
 	# If no files are sent, the browser sends an empty file with an empty filename
 	if image_document.filename == '' \
 	or image_selfie.filename == '':
+		print("Images were not sent")
 		return {"ok": False, "error": "Images were not sent"}, 415
 	
 	if not is_file_extension_allowed(image_document.filename) \
 	or not is_file_extension_allowed(image_selfie.filename):
+		print("File not allowed")
 		return {"ok": False, "error": "File not allowed"}, 415
 
 	#image_document_key = str(uuid.uuid4())
@@ -81,6 +85,7 @@ def facial_auth():
 	faces_are_the_same = face_recognition.compare_two_faces(document_object=image_document_object, selfie_object=image_selfie_object, aws_client=aws_client)
 
 	if faces_are_the_same is None:
+		print("Failed to match faces")
 		return {"ok": False, "error": "Failed to match faces"}, 400
 	
 	'''
@@ -93,6 +98,7 @@ def facial_auth():
 	print("Cropped document: " + image_document_key + "_cropped")
 	'''
 
+	print("faces_match: " + str(faces_are_the_same))
 	return {"ok": True, "faces_match": faces_are_the_same}, 200
 
 
