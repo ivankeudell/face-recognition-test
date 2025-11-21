@@ -1,4 +1,5 @@
 config.json
+response.json
 .venv/
 .venv_*/
 __pycache__/

@@ -1,6 +1,9 @@
 import boto3
+from textractor import Textractor
+#from textractor.parsers import response_parser
 from PIL import Image
 import io
+import os
 import json
 import traceback
 
@@ -35,15 +38,13 @@ def create_textract_client():
 
 	print("Creating AWS Textract Client...")
 
-	textract_client = boto3.client(
-		'textract',
-		aws_access_key_id=config["access_key"],
-		aws_secret_access_key=config["secret_access_key"],
-		region_name="us-east-1"
-	)
+	os.environ["AWS_ACCESS_KEY_ID"] = config["access_key"]
+	os.environ["AWS_SECRET_ACCESS_KEY"] = config["secret_access_key"]
+
+	textractor = Textractor(region_name="us-east-1")
 
 	print("AWS Textract Client created!")
-	return textract_client
+	return textractor
 
 
 
@@ -164,15 +165,42 @@ def compare_two_faces(document_object, selfie_object):
 
 
 
+def _obtain_document_data(textractor_result):
+	result = {
+		"name" : textractor_result["FIRST_NAME"].title() + " " + textractor_result["MIDDLE_NAME"].title(),
+		"lastname": textractor_result["LAST_NAME"].title(),
+		"cin": textractor_result["DOCUMENT_NUMBER"],
+		"date_of_birth": textractor_result["DATE_OF_BIRTH"]
+	}
+
+	return result
+
+	
+
+
 def get_document_details(document_object):
 	textract_client = create_textract_client()
 
 	document_image_blob = resize_image(document_object["blob"], document_object["fileext"])["blob"]
-	
-	response = textract_client.analyze_document(
-		Document={"Bytes": document_image_blob},
-		FeatureTypes=["FORMS"]
+
+	document = textract_client.analyze_id(
+		file_source=Image.open(io.BytesIO(document_image_blob))
 	)
 
-	print("The document contains:\n" + json.dumps(response))
+	print(document.identity_documents[0])
+
+	return _obtain_document_data(document.identity_documents[0])
+
+	'''
+	aws_response = None
+	with open("/home/test-user/3d_objects/Projects/face-recognition-test/response.json") as f:
+		aws_response = json.load(f)
+
+	textractor_doc = response_parser.parse(aws_response)
+	print("The document contains:\n" + str(textractor_doc))
+
+	for field in textractor_doc.forms:
+		print(f"{field.key.text}: {field.value.text}")
+	'''
+
 	return None

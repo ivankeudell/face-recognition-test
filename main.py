@@ -1,6 +1,7 @@
 print("Starting...")
 
 from flask import Flask, Response, request
+import json
 #import uuid
 
 print("Importing face recognition module...")
@@ -80,14 +81,15 @@ def facial_auth():
 
 	#uploaded_files[image_document_key] = image_document_object
 	#uploaded_files[image_selfie_key] = image_selfie_object
-
 	faces_are_the_same = aws_interface.compare_two_faces(document_object=image_document_object, selfie_object=image_selfie_object)
 
 	if faces_are_the_same is None:
 		print("Failed to match faces")
 		return {"ok": False, "error": "Failed to match faces"}, 400
-	
+	print("faces_match: " + str(faces_are_the_same))
+
 	document_details = aws_interface.get_document_details(image_document_object)
+	print(document_details)
 
 	'''
 	uploaded_files[image_document_key + "_cropped"] = {
@@ -99,8 +101,8 @@ def facial_auth():
 	print("Cropped document: " + image_document_key + "_cropped")
 	'''
 
-	print("faces_match: " + str(faces_are_the_same))
-	return {"ok": True, "faces_match": faces_are_the_same}, 200
+	#return {"ok": True, "document_details": document_details}
+	return {"ok": True, "faces_match": faces_are_the_same, "document_details": document_details}, 200
 
 
 '''
