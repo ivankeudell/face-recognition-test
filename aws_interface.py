@@ -1,6 +1,5 @@
 import boto3
 from textractor import Textractor
-#from textractor.parsers import response_parser
 from PIL import Image
 import io
 import os
@@ -11,13 +10,13 @@ SIMILARITY_THRESHOLD = 70
 
 
 
-def get_config():
+def _get_config():
 	with open("config.json") as json_file:
 		return json.load(json_file)
 
 
-def create_rekognition_client():
-	config = get_config()
+def _create_rekognition_client():
+	config = _get_config()
 
 	print("Creating AWS Rekognition Client...")
 	
@@ -33,8 +32,8 @@ def create_rekognition_client():
 
 
 
-def create_textract_client():
-	config = get_config()
+def _create_textract_client():
+	config = _get_config()
 
 	print("Creating AWS Textract Client...")
 
@@ -48,7 +47,7 @@ def create_textract_client():
 
 
 
-def resize_image(image_blob, image_file_extension):
+def _resize_image(image_blob, image_file_extension):
 	try:
 		if image_file_extension == 'jpg':
 			image_file_extension = 'jpeg' # Pillow is stupid
@@ -85,12 +84,12 @@ def resize_image(image_blob, image_file_extension):
 
 
 
-def detect_and_crop_face(image_blob, image_file_extension, aws_client):
+def _detect_and_crop_face(image_blob, image_file_extension, aws_client):
 	try:
 		if image_file_extension == 'jpg':
 			image_file_extension = 'jpeg' # Pillow is stupid
 
-		resized_obj = resize_image(image_blob, image_file_extension)
+		resized_obj = _resize_image(image_blob, image_file_extension)
 		resized_blob = resized_obj["blob"]
 		# Send image to aws to get face bounding box
 		print("Asking AWS to detect a face...")
@@ -123,7 +122,7 @@ def detect_and_crop_face(image_blob, image_file_extension, aws_client):
 
 
 
-def are_faces_the_same(document_blob, selfie_blob, aws_client):
+def _are_faces_the_same(document_blob, selfie_blob, aws_client):
 	print("Asking AWS to compare the faces...")
 	response = aws_client.compare_faces(
 		SourceImage={'Bytes': document_blob},
@@ -148,19 +147,19 @@ def are_faces_the_same(document_blob, selfie_blob, aws_client):
 
 
 def compare_two_faces(document_object, selfie_object):
-	rekognition_client = create_rekognition_client()
+	rekognition_client = _create_rekognition_client()
 
-	cropped_document_face_blob = detect_and_crop_face(document_object["blob"], document_object["fileext"], rekognition_client)
+	cropped_document_face_blob = _detect_and_crop_face(document_object["blob"], document_object["fileext"], rekognition_client)
 	if cropped_document_face_blob is None:
 		print("Failed to get cropped document face :C")
 		return None
 
-	cropped_selfie_face_blob = detect_and_crop_face(selfie_object["blob"], selfie_object["fileext"], rekognition_client)
+	cropped_selfie_face_blob = _detect_and_crop_face(selfie_object["blob"], selfie_object["fileext"], rekognition_client)
 	if cropped_selfie_face_blob is None:
 		print("Failed to get cropped selfie face :C")
 		return None
 
-	are_the_same = are_faces_the_same(cropped_document_face_blob, cropped_selfie_face_blob, rekognition_client)
+	are_the_same = _are_faces_the_same(cropped_document_face_blob, cropped_selfie_face_blob, rekognition_client)
 	return are_the_same
 
 
@@ -175,13 +174,13 @@ def _obtain_document_data(textractor_result):
 
 	return result
 
-	
+
 
 
 def get_document_details(document_object):
-	textract_client = create_textract_client()
+	textract_client = _create_textract_client()
 
-	document_image_blob = resize_image(document_object["blob"], document_object["fileext"])["blob"]
+	document_image_blob = _resize_image(document_object["blob"], document_object["fileext"])["blob"]
 
 	document = textract_client.analyze_id(
 		file_source=Image.open(io.BytesIO(document_image_blob))
@@ -190,17 +189,3 @@ def get_document_details(document_object):
 	print(document.identity_documents[0])
 
 	return _obtain_document_data(document.identity_documents[0])
-
-	'''
-	aws_response = None
-	with open("/home/test-user/3d_objects/Projects/face-recognition-test/response.json") as f:
-		aws_response = json.load(f)
-
-	textractor_doc = response_parser.parse(aws_response)
-	print("The document contains:\n" + str(textractor_doc))
-
-	for field in textractor_doc.forms:
-		print(f"{field.key.text}: {field.value.text}")
-	'''
-
-	return None

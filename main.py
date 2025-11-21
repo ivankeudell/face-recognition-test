@@ -101,7 +101,6 @@ def facial_auth():
 	print("Cropped document: " + image_document_key + "_cropped")
 	'''
 
-	#return {"ok": True, "document_details": document_details}
 	return {"ok": True, "faces_match": faces_are_the_same, "document_details": document_details}, 200
 
 
